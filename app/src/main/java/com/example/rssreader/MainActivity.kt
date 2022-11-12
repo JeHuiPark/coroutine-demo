@@ -13,24 +13,49 @@ import javax.xml.parsers.DocumentBuilderFactory
 @OptIn(DelicateCoroutinesApi::class)
 class MainActivity : AppCompatActivity() {
 
-    private val dispatcher: CoroutineDispatcher = newSingleThreadContext(name = "ServiceCall")
+    private val dispatcher: CoroutineDispatcher = newFixedThreadPoolContext(2, "IO")
     private val factory: DocumentBuilderFactory = DocumentBuilderFactory.newInstance()
+    private val feedProviders = listOf(
+        "illegal://illegal.url",
+        "https://feeds.npr.org/1001/rss.xml",
+        "https://feeds.foxnews.com/foxnews/politics?format=xml",
+    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        GlobalScope.launch(dispatcher) {
-            val headlines = fetchRssHeadlines()
-            val newsCount = findViewById<TextView>(R.id.newsCount)
-            GlobalScope.launch(Dispatchers.Main) {
-                newsCount.text = "Found ${headlines.size} News"
+
+        loadNews()
+    }
+
+    private fun loadNews() = GlobalScope.launch(dispatcher) {
+        val headlineDeferredList = feedProviders.map { fetchRssHeadlinesAsync(it, dispatcher) }
+        headlineDeferredList.joinAll()
+        val headlines = headlineDeferredList.filter { !it.isCancelled }
+            .flatMap { it.await() }
+        val failed = headlineDeferredList.filter { it.isCancelled }.size
+
+        val newsCount = findViewById<TextView>(R.id.newsCount)
+        val warnings = findViewById<TextView>(R.id.warnings)
+        val obtained = feedProviders.size - failed
+        launch(Dispatchers.Main) {
+            newsCount.text = "Found ${headlines.size} News " +
+                    "in $obtained feeds"
+            if (failed > 0) {
+                warnings.text = "Failed to fetch $failed feeds"
             }
         }
     }
 
-    private fun fetchRssHeadlines(): List<String> {
+    private fun fetchRssHeadlinesAsync(
+        feed: String,
+        dispatcher: CoroutineDispatcher
+    ) = GlobalScope.async(dispatcher) {
+            fetchRssHeadlines(feed)
+    }
+    private fun fetchRssHeadlines(feed: String): List<String> {
         val builder = factory.newDocumentBuilder()
-        val xml = builder.parse("https://feeds.npr.org/1001/rss.xml")
+        val xml = builder.parse(feed)
         val news = xml.getElementsByTagName("channel").item(0)
         return (0 until news.childNodes.length)
             .map { news.childNodes.item(it) }
