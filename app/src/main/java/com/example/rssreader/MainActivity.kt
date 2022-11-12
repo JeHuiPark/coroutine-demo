@@ -23,7 +23,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadNews() = GlobalScope.launch(dispatcher) {
-        val headlineDeferredList = feedService.fetchAllRssHeadlinesAsync(dispatcher)
+        val headlineDeferredList = feedService.fetchAllArticlesAsync(dispatcher)
         headlineDeferredList.joinAll()
         val headlines = headlineDeferredList.filter { !it.isCancelled }
             .flatMap { it.await() }
