@@ -44,7 +44,9 @@ class SearchActivity : AppCompatActivity() {
             GlobalScope.launch {
                 ResultsCounter.reset()
                 showLoading()
+                hideUpdateCounter()
                 search()
+                showUpdateCounter()
                 hideLoading()
             }
         }
@@ -78,4 +80,7 @@ class SearchActivity : AppCompatActivity() {
             }
         }
     }
+
+    private fun showUpdateCounter() = findViewById<TextView>(R.id.results).show()
+    private fun hideUpdateCounter() = findViewById<TextView>(R.id.results).hide()
 }
