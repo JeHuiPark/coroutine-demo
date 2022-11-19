@@ -56,8 +56,9 @@ class ArticleAdapter(
     }
 
     fun addAll(articles: List<Article>) {
+        val position = this.articles.size - 1
         this.articles.addAll(articles)
-        notifyItemInserted(this.articles.size - 1)
+        notifyItemRangeInserted(position, articles.size)
     }
 
     fun add(article: Article) {
@@ -68,7 +69,7 @@ class ArticleAdapter(
     fun clear() {
         val articleSize = this.articles.size
         this.articles.clear()
-        notifyItemRemoved(articleSize - 1)
+        notifyItemRangeRemoved(0, articleSize)
     }
 
     class ViewHolder(
