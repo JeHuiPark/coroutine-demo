@@ -8,7 +8,7 @@ import org.w3c.dom.Node
 import javax.xml.parsers.DocumentBuilderFactory
 
 @OptIn(DelicateCoroutinesApi::class)
-class FeedService {
+class ArticleService {
 
     private val factory: DocumentBuilderFactory = DocumentBuilderFactory.newInstance()
     private val feeds = listOf(

@@ -7,8 +7,8 @@ import android.widget.ProgressBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.rssreader.feed.FeedService
-import com.example.rssreader.feed.FeedServiceFactory
+import com.example.rssreader.feed.ArticleService
+import com.example.rssreader.feed.ArticleServiceFactory
 import com.example.rssreader.feed.adapter.ArticleAdapter
 import kotlinx.coroutines.*
 
@@ -17,7 +17,7 @@ import kotlinx.coroutines.*
 class MainActivity : AppCompatActivity() {
 
     private val dispatcher: CoroutineDispatcher = newFixedThreadPoolContext(2, "IO")
-    private val feedService: FeedService = FeedServiceFactory.newInstance()
+    private val articleService: ArticleService = ArticleServiceFactory.newInstance()
 
     private lateinit var viewManager: LinearLayoutManager
     private lateinit var viewAdapter: ArticleAdapter
@@ -37,7 +37,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadNews() =  GlobalScope.launch(dispatcher) {
-        val articleDeferredList = feedService.fetchAllArticlesAsync(dispatcher)
+        val articleDeferredList = articleService.fetchAllArticlesAsync(dispatcher)
         articleDeferredList.joinAll()
         val articles = articleDeferredList.filter { !it.isCancelled }
             .flatMap { it.await() }
