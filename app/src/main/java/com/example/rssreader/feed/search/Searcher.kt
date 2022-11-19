@@ -3,15 +3,13 @@ package com.example.rssreader.feed.search
 import com.example.rssreader.feed.ArticleServiceFactory
 import com.example.rssreader.feed.model.Article
 import com.example.rssreader.feed.model.Feed
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.newFixedThreadPoolContext
+import java.util.concurrent.atomic.AtomicInteger
 
-@OptIn(DelicateCoroutinesApi::class)
+@OptIn(DelicateCoroutinesApi::class, ExperimentalCoroutinesApi::class)
 class Searcher {
 
     private val dispatcher = newFixedThreadPoolContext(3, "IO-Search")
@@ -24,12 +22,27 @@ class Searcher {
 
     fun search(query: String): ReceiveChannel<Article> {
         val channel = Channel<Article>(Channel.BUFFERED)
+
+        val jobCompleteCounter = AtomicInteger()
         feeds.forEach { feed ->
             GlobalScope.launch(dispatcher) {
                 search(feed, channel, query)
+            }.invokeOnCompletion {
+                if (jobCompleteCounter.incrementAndGet() == feeds.size) {
+                    executeChannelAutoCloser(channel)
+                }
             }
         }
         return channel
+    }
+
+    private fun executeChannelAutoCloser(channel: Channel<*>) {
+        GlobalScope.launch {
+            while (!channel.isEmpty) {
+                delay(100)
+            }
+            channel.close()
+        }
     }
 
     private suspend fun search(
