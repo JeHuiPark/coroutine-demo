@@ -60,6 +60,17 @@ class ArticleAdapter(
         notifyItemInserted(this.articles.size - 1)
     }
 
+    fun add(article: Article) {
+        this.articles.add(article)
+        notifyItemInserted(this.articles.size - 1)
+    }
+
+    fun clear() {
+        val articleSize = this.articles.size
+        this.articles.clear()
+        notifyItemRemoved(articleSize - 1)
+    }
+
     class ViewHolder(
         layout: LinearLayout,
         val feed: TextView,
