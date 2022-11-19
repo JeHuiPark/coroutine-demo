@@ -7,17 +7,14 @@ import android.widget.ProgressBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.rssreader.feed.ArticleService
-import com.example.rssreader.feed.ArticleServiceFactory
+import com.example.rssreader.feed.ArticleProducerFactory
 import com.example.rssreader.feed.adapter.ArticleAdapter
+import com.example.rssreader.feed.adapter.ArticleLoader
 import kotlinx.coroutines.*
 
 @SuppressLint("SetTextI18n")
 @OptIn(DelicateCoroutinesApi::class)
-class MainActivity : AppCompatActivity() {
-
-    private val dispatcher: CoroutineDispatcher = newFixedThreadPoolContext(2, "IO")
-    private val articleService: ArticleService = ArticleServiceFactory.newInstance()
+class MainActivity : AppCompatActivity(), ArticleLoader {
 
     private lateinit var viewManager: LinearLayoutManager
     private lateinit var viewAdapter: ArticleAdapter
@@ -28,22 +25,26 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         viewManager = LinearLayoutManager(this)
-        viewAdapter = ArticleAdapter()
+        viewAdapter = ArticleAdapter(this)
         articles = findViewById<RecyclerView>(R.id.articles).apply {
             layoutManager = viewManager
             adapter = viewAdapter
         }
-        loadNews()
+
+        GlobalScope.launch { loadMore() }
     }
 
-    private fun loadNews() =  GlobalScope.launch(dispatcher) {
-        val articleDeferredList = articleService.fetchAllArticlesAsync(dispatcher)
-        articleDeferredList.joinAll()
-        val articles = articleDeferredList.filter { !it.isCancelled }
-            .flatMap { it.await() }
-        launch(Dispatchers.Main) {
-            findViewById<ProgressBar>(R.id.progressBar).visibility = View.GONE
-            viewAdapter.addAll(articles)
+    @OptIn(ExperimentalCoroutinesApi::class)
+    override suspend fun loadMore() {
+        val producer = ArticleProducerFactory.getProducer()
+
+        if (!producer.isClosedForReceive) {
+            val articles = producer.receive()
+
+            GlobalScope.launch(Dispatchers.Main) {
+                findViewById<ProgressBar>(R.id.progressBar).visibility = View.GONE
+                viewAdapter.addAll(articles)
+            }
         }
     }
 }

@@ -7,10 +7,16 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.rssreader.R
 import com.example.rssreader.feed.model.Article
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 
-class ArticleAdapter : RecyclerView.Adapter<ArticleAdapter.ViewHolder>() {
+class ArticleAdapter(
+    private val loader: ArticleLoader,
+) : RecyclerView.Adapter<ArticleAdapter.ViewHolder>() {
 
     private val articles: MutableList<Article> = mutableListOf()
+    private var loading: Boolean = false
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val layout = LayoutInflater.from(parent.context) .inflate(R.layout.article, parent, false) as LinearLayout
@@ -29,11 +35,22 @@ class ArticleAdapter : RecyclerView.Adapter<ArticleAdapter.ViewHolder>() {
         return articles.size
     }
 
+    @OptIn(DelicateCoroutinesApi::class)
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val article = articles[position]
         holder.feed.text = article.feed
         holder.title.text = article.title
         holder.summary.text = article.summary
+
+        // request more articles when needed
+        if (!loading && position >= articles.size -2) {
+            loading = true
+
+            GlobalScope.launch {
+                loader.loadMore()
+                loading = false
+            }
+        }
     }
 
     fun addAll(articles: List<Article>) {
