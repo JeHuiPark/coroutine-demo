@@ -1,14 +1,17 @@
 package com.example.rssreader
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ProgressBar
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.rssreader.feed.adapter.ArticleAdapter
+import com.example.rssreader.feed.search.ResultsCounter
 import com.example.rssreader.feed.search.Searcher
 import kotlinx.coroutines.*
 
@@ -31,9 +34,14 @@ class SearchActivity : AppCompatActivity() {
             adapter = articleAdapter
         }
 
+        GlobalScope.launch {
+            updateCounter()
+        }
+
         findViewById<Button>(R.id.searchButton).setOnClickListener {
             articleAdapter.clear()
             GlobalScope.launch {
+                ResultsCounter.reset()
                 showLoading()
                 search()
                 hideLoading()
@@ -59,5 +67,18 @@ class SearchActivity : AppCompatActivity() {
 
     private fun hideLoading() = GlobalScope.launch(Dispatchers.Main) {
         findViewById<ProgressBar>(R.id.progressBar).visibility = View.GONE
+    }
+
+    @SuppressLint("SetTextI18n")
+    private suspend fun updateCounter() {
+        val notifications = ResultsCounter.notificationReceiver
+        val results = findViewById<TextView>(R.id.results)
+
+        while(!notifications.isClosedForReceive) {
+            val newAmount = notifications.receive()
+            withContext(Dispatchers.Main) {
+                results.text = "Results: $newAmount"
+            }
+        }
     }
 }

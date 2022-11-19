@@ -55,6 +55,7 @@ class Searcher {
                 it.forEach { article ->
                     if (article.title.contains(query) || article.summary.contains(query)) {
                         channel.send(article)
+                        ResultsCounter.increment()
                     }
                 }
             }
