@@ -2,7 +2,6 @@ package com.example.rssreader
 
 import android.annotation.SuppressLint
 import android.os.Bundle
-import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ProgressBar
@@ -13,6 +12,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.rssreader.feed.adapter.ArticleAdapter
 import com.example.rssreader.feed.search.ResultsCounter
 import com.example.rssreader.feed.search.Searcher
+import com.example.rssreader.view.hide
+import com.example.rssreader.view.show
 import kotlinx.coroutines.*
 
 @OptIn(DelicateCoroutinesApi::class, ExperimentalCoroutinesApi::class)
@@ -61,13 +62,9 @@ class SearchActivity : AppCompatActivity() {
         }
     }
 
-    private fun showLoading() = GlobalScope.launch(Dispatchers.Main) {
-        findViewById<ProgressBar>(R.id.progressBar).visibility = View.VISIBLE
-    }
+    private fun showLoading() = findViewById<ProgressBar>(R.id.progressBar).show()
 
-    private fun hideLoading() = GlobalScope.launch(Dispatchers.Main) {
-        findViewById<ProgressBar>(R.id.progressBar).visibility = View.GONE
-    }
+    private fun hideLoading() = findViewById<ProgressBar>(R.id.progressBar).hide()
 
     @SuppressLint("SetTextI18n")
     private suspend fun updateCounter() {
