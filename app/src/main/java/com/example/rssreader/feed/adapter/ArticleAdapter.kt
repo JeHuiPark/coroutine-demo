@@ -12,7 +12,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
 class ArticleAdapter(
-    private val loader: ArticleLoader,
+    private val articleLoader: ArticleLoader? = null,
 ) : RecyclerView.Adapter<ArticleAdapter.ViewHolder>() {
 
     private val articles: MutableList<Article> = mutableListOf()
@@ -43,12 +43,14 @@ class ArticleAdapter(
         holder.summary.text = article.summary
 
         // request more articles when needed
-        if (!loading && position >= articles.size -2) {
-            loading = true
+        articleLoader?.let {
+            if (!loading && position >= articles.size -2) {
+                loading = true
 
-            GlobalScope.launch {
-                loader.loadMore()
-                loading = false
+                GlobalScope.launch {
+                    articleLoader.loadMore()
+                    loading = false
+                }
             }
         }
     }
